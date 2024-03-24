@@ -229,14 +229,14 @@ func GetUrl(bucketName, objectKey string) (string, error) {
 	})
 
 	// Gerando a URL pré-assinada
-	urlStr, err := req.Presign(48 * time.Hour) // URL válida por 48 Hours
+	urlStr, err := req.Presign(15 * time.Minute) // URL válida por 15 minutos
 	if err != nil {
 		fmt.Println("Erro ao gerar URL pré-assinada:", err)
 		return "", err
 	}
 
 	fmt.Println("URL Pré-assinada:", urlStr)
-	return "", nil
+	return urlStr, nil
 }
 
 func HandleRequest(ctx context.Context, s3Event events.S3Event) (string, error) {
