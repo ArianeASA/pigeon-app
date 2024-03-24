@@ -10,12 +10,15 @@ import (
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials/stscreds"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/aws/aws-sdk-go/service/sts"
 	"log"
 	"net/smtp"
 	"os"
 	"pigeon/constants"
+	"time"
 )
 
 type S3Event struct {
@@ -202,6 +205,41 @@ func NewAwsClient() (*session.Session, error) {
 	return sess, nil
 
 }
+
+func GetUrl(bucketName, objectKey string) (string, error) {
+	// Configuração da sessão AWS
+	sess, err := NewAwsClient()
+	if err != nil {
+		fmt.Println("Erro ao criar sessão AWS:", err)
+		return "", err
+	}
+
+	// Criação do cliente STS
+	stsSvc := sts.New(sess)
+
+	// Assumindo um papel IAM para obter credenciais temporárias
+	creds := stscreds.NewCredentialsWithClient(stsSvc, os.Getenv("ROLE_ARN"))
+
+	// Criação do cliente S3 com as credenciais temporárias
+	s3Svc := s3.New(sess, &aws.Config{Credentials: creds})
+
+	// Parâmetros para a URL pré-assinada
+	req, _ := s3Svc.GetObjectRequest(&s3.GetObjectInput{
+		Bucket: aws.String(bucketName),
+		Key:    aws.String(objectKey),
+	})
+
+	// Gerando a URL pré-assinada
+	urlStr, err := req.Presign(48 * time.Hour) // URL válida por 48 Hours
+	if err != nil {
+		fmt.Println("Erro ao gerar URL pré-assinada:", err)
+		return "", err
+	}
+
+	fmt.Println("URL Pré-assinada:", urlStr)
+	return "", nil
+}
+
 func HandleRequest(ctx context.Context, s3Event events.S3Event) (string, error) {
 	sess, _ := NewAwsClient()
 	s3Client := s3.New(sess)
@@ -236,7 +274,12 @@ func HandleRequest(ctx context.Context, s3Event events.S3Event) (string, error) 
 			//	return "", err
 			//}
 
-			downloadLink := fmt.Sprintf("https://%s.s3.amazonaws.com/%s", bucket, key)
+			//downloadLink := fmt.Sprintf("https://%s.s3.amazonaws.com/%s", bucket, key)
+			downloadLink, err := GetUrl(bucket, key)
+			if err != nil {
+				fmt.Println("Erro ao obter URL pré-assinada:", err)
+				continue
+			}
 
 			message := fmt.Sprintf("Um novo arquivo foi carregado: %s", downloadLink)
 			subject := "Novo arquivo carregado"
@@ -244,7 +287,7 @@ func HandleRequest(ctx context.Context, s3Event events.S3Event) (string, error) 
 			err = sendEmailTwo(*encryptedEmail, subject, message)
 			if err != nil {
 				fmt.Println("Erro ao enviar email", err)
-				return "", err
+				continue
 			}
 		}
 	}

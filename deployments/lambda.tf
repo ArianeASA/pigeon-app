@@ -17,6 +17,7 @@ resource "aws_lambda_function" "pigeon_lambda" {
             SMTP_PASS = var.smtp_pass
             HEAD_METADATA = var.head_metadata
             REGION_INFRA = var.aws_region
+            ROLE_URL = aws_iam_role.presign_role.arn
         }
     }
     role = aws_iam_role.lambda_exec.arn
