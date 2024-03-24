@@ -11,7 +11,7 @@ resource "aws_s3_bucket_ownership_controls" "lambda_bucket_controls" {
 
 resource "aws_s3_object" "lambda_object_filter" {
     bucket = aws_s3_bucket.pigeon_bucket.id
-    key    = "test/"
+    key    = "relatorios/"
     acl   = "private"
 }
 
@@ -60,7 +60,7 @@ resource "aws_s3_bucket_notification" "bucket_notification" {
     lambda_function {
         lambda_function_arn = aws_lambda_function.pigeon_lambda.arn
         events              = ["s3:ObjectCreated:*"]
-        filter_prefix       = "test"
+        filter_prefix       = "relatorios"
     }
 }
 
@@ -111,7 +111,7 @@ resource "aws_iam_role_policy" "presign_policy" {
                     "s3:GetObject",
                 ]
                 Effect   = "Allow"
-                Resource = "arn:aws:s3:::${aws_s3_bucket.pigeon_bucket.id}/test"
+                Resource = "arn:aws:s3:::${aws_s3_bucket.pigeon_bucket.id}/relatorios"
             },
         ]
     })

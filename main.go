@@ -34,87 +34,6 @@ type S3Event struct {
 
 func sendEmail(to, subject, body string) error {
 	smtpServer := os.Getenv(constants.SmtpHost)
-	port := os.Getenv(constants.SmtpPort)
-	user := os.Getenv(constants.SmtpUser) // Substitua pelo seu e-mail do Gmail
-	pass := os.Getenv(constants.SmtpPass) // Substitua pela sua senha do Gmail ou senha de aplicativo
-
-	from := user
-	msg := []byte("From: " + from + "\n" +
-		"To: " + to + "\n" +
-		"Subject: " + subject + "\n\n" +
-		body)
-
-	auth := smtp.PlainAuth("", user, pass, smtpServer)
-
-	tlsConfig := &tls.Config{
-		InsecureSkipVerify: false,
-		ServerName:         smtpServer,
-	}
-
-	conn, err := tls.Dial("tcp", smtpServer+":"+port, tlsConfig)
-	if err != nil {
-		fmt.Println("Erro ao conectar ao servidor SMTP:", err)
-		return err
-	}
-
-	client, err := smtp.NewClient(conn, smtpServer)
-	if err != nil {
-		fmt.Println("Erro ao criar cliente SMTP:", err)
-		return err
-
-	}
-
-	if err := client.Auth(auth); err != nil {
-		fmt.Println("Erro na autenticação:", err)
-		return err
-
-	}
-
-	if err := client.Mail(from); err != nil {
-		fmt.Println("Erro ao definir remetente:", err)
-		return err
-
-	}
-
-	if err := client.Rcpt(to); err != nil {
-		fmt.Println("Erro ao definir destinatário:", err)
-		return err
-
-	}
-
-	wc, err := client.Data()
-	if err != nil {
-		fmt.Println("Erro ao obter writer:", err)
-		return err
-
-	}
-
-	_, err = wc.Write(msg)
-	if err != nil {
-		fmt.Println("Erro ao escrever corpo do e-mail:", err)
-		return err
-	}
-
-	err = wc.Close()
-	if err != nil {
-		fmt.Println("Erro ao fechar writer:", err)
-		return err
-
-	}
-
-	if err := client.Quit(); err != nil {
-		fmt.Println("Erro ao encerrar conexão:", err)
-		return err
-
-	}
-
-	fmt.Println("E-mail enviado com sucesso!")
-	//err = smtp.SendMail(smtpServer+":"+port, auth, from, []string{to}, msg)
-	return nil
-}
-
-func sendEmailTwo(to, subject, body string) error {
-	smtpServer := os.Getenv(constants.SmtpHost)
 	//port := os.Getenv(constants.SmtpPort)
 	user := os.Getenv(constants.SmtpUser)
 	pass := os.Getenv(constants.SmtpPass)
@@ -268,10 +187,10 @@ func HandleRequest(ctx context.Context, s3Event events.S3Event) (string, error) 
 				continue
 			}
 
-			message := fmt.Sprintf("Um novo arquivo foi carregado: %s", downloadLink)
-			subject := "Novo arquivo carregado"
+			message := fmt.Sprintf("Um novo relátorio foi gerado: <a href='%s'>Clique aqui para baixar</a>", downloadLink)
+			subject := "Relatório de Batidas de Pontos"
 
-			err = sendEmailTwo(*encryptedEmail, subject, message)
+			err = sendEmail(*encryptedEmail, subject, message)
 			if err != nil {
 				fmt.Println("Erro ao enviar email", err)
 				continue
