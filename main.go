@@ -112,6 +112,69 @@ func sendEmail(to, subject, body string) error {
 	return nil
 }
 
+func sendEmailTwo(to, subject, body string) error {
+	smtpServer := os.Getenv(constants.SmtpHost)
+	//port := os.Getenv(constants.SmtpPort)
+	user := os.Getenv(constants.SmtpUser)
+	pass := os.Getenv(constants.SmtpPass)
+	smtpPort := "587" // Porta para conexão TLS
+
+	from := user
+	password := pass
+
+	message := []byte("From: " + from + "\n" +
+		"To: " + to + "\n" +
+		"Subject: " + subject + "\n\n" +
+		body)
+
+	auth := smtp.PlainAuth("", from, password, smtpServer)
+
+	client, err := smtp.Dial(smtpServer + ":" + smtpPort)
+	if err != nil {
+		fmt.Println("Erro ao conectar ao servidor SMTP:", err)
+		return err
+	}
+	defer func(client *smtp.Client) {
+		err := client.Close()
+		if err != nil {
+			fmt.Println("Erro ao fechar conexão:", err)
+		}
+	}(client)
+
+	tlsConfig := &tls.Config{
+		InsecureSkipVerify: true,
+		ServerName:         smtpServer,
+	}
+	if err := client.StartTLS(tlsConfig); err != nil {
+		return err
+	}
+
+	if err := client.Auth(auth); err != nil {
+		return err
+	}
+
+	if err := client.Mail(from); err != nil {
+		return err
+	}
+	if err := client.Rcpt(to); err != nil {
+		return err
+	}
+
+	writer, err := client.Data()
+	if err != nil {
+		return err
+	}
+	_, err = writer.Write(message)
+	if err != nil {
+		return err
+	}
+	err = writer.Close()
+	if err != nil {
+		return err
+	}
+	fmt.Println("Email enviado com sucesso!")
+	return nil
+}
 func decryptEmail(encryptedEmail string, key []byte) (string, error) {
 	ciphertext, _ := base64.StdEncoding.DecodeString(encryptedEmail)
 	block, err := aes.NewCipher(key)
@@ -178,8 +241,9 @@ func HandleRequest(ctx context.Context, s3Event events.S3Event) (string, error) 
 			message := fmt.Sprintf("Um novo arquivo foi carregado: %s", downloadLink)
 			subject := "Novo arquivo carregado"
 
-			err = sendEmail(*encryptedEmail, subject, message)
+			err = sendEmailTwo(*encryptedEmail, subject, message)
 			if err != nil {
+				fmt.Println("Erro ao enviar email", err)
 				return "", err
 			}
 		}
