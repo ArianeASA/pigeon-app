@@ -53,6 +53,17 @@ resource "aws_iam_role_policy" "apigateway_role_policy" {
     })
 }
 
+#resource "aws_api_gateway_integration" "integration" {
+#    rest_api_id = aws_api_gateway_rest_api.api.id
+#    resource_id = aws_api_gateway_resource.resource.id
+#    http_method = aws_api_gateway_method.method.http_method
+#
+#    integration_http_method = "GET"
+#    type                    = "HTTP"
+#    uri                     = "arn:aws:apigateway:${var.aws_region}:s3:path/${aws_s3_bucket.pigeon_bucket.id}/{proxy}"
+#    credentials             = aws_iam_role.apigateway_role.arn
+#}
+
 resource "aws_api_gateway_integration" "integration" {
     rest_api_id = aws_api_gateway_rest_api.api.id
     resource_id = aws_api_gateway_resource.resource.id
@@ -60,8 +71,9 @@ resource "aws_api_gateway_integration" "integration" {
 
     integration_http_method = "GET"
     type                    = "HTTP"
-    uri                     = "arn:aws:apigateway:${var.aws_region}:s3:path/${aws_s3_bucket.pigeon_bucket.id}/{proxy}"
+    uri                     = "https://${aws_s3_bucket.pigeon_bucket.bucket_regional_domain_name}/{proxy}"
     credentials             = aws_iam_role.apigateway_role.arn
+
 }
 
 resource "aws_api_gateway_deployment" "deployment" {
