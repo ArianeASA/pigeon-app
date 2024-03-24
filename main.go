@@ -205,31 +205,20 @@ func NewAwsClient() (*session.Session, error) {
 }
 
 func GetUrl(bucketName, objectKey string) (string, error) {
-	// Configuração da sessão AWS
 	sess, err := NewAwsClient()
 	if err != nil {
 		fmt.Println("Erro ao criar sessão AWS:", err)
 		return "", err
 	}
 
-	//// Criação do cliente STS
-	//stsSvc := sts.New(sess)
-	//
-	//// Assumindo um papel IAM para obter credenciais temporárias
-	//creds := stscreds.NewCredentialsWithClient(stsSvc, os.Getenv("ROLE_URL"))
-
-	//// Criação do cliente S3 com as credenciais temporárias
-	//s3Svc := s3.New(sess, &aws.Config{Credentials: creds})
 	s3Svc := s3.New(sess)
 
-	// Parâmetros para a URL pré-assinada
 	req, _ := s3Svc.GetObjectRequest(&s3.GetObjectInput{
 		Bucket: aws.String(bucketName),
 		Key:    aws.String(objectKey),
 	})
 
-	// Gerando a URL pré-assinada
-	urlStr, err := req.Presign(15 * time.Minute) // URL válida por 15 minutos
+	urlStr, err := req.Presign(15 * time.Minute)
 	if err != nil {
 		fmt.Println("Erro ao gerar URL pré-assinada:", err)
 		return "", err
@@ -273,7 +262,6 @@ func HandleRequest(ctx context.Context, s3Event events.S3Event) (string, error) 
 			//	return "", err
 			//}
 
-			//downloadLink := fmt.Sprintf("https://%s.s3.amazonaws.com/%s", bucket, key)
 			downloadLink, err := GetUrl(bucket, key)
 			if err != nil {
 				fmt.Println("Erro ao obter URL pré-assinada:", err)
