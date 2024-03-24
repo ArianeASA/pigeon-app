@@ -27,7 +27,7 @@ resource "aws_lambda_permission" "allow_bucket" {
     action        = "lambda:InvokeFunction"
     function_name = aws_lambda_function.pigeon_lambda.function_name
     principal     = "s3.amazonaws.com"
-    source_arn    = "${aws_s3_bucket.pigeon-bucket.arn}/*"
+    source_arn    = "${aws_s3_bucket.pigeon_bucket.arn}/*"
 }
 
 
