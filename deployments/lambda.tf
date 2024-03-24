@@ -96,3 +96,16 @@ resource "aws_iam_role_policy_attachment" "lambda_exec_s3_access" {
     role       = aws_iam_role.lambda_exec.name
     policy_arn = aws_iam_policy.s3_access.arn
 }
+
+data "aws_iam_policy_document" "assume_presign_role" {
+    statement {
+        actions = ["sts:AssumeRole"]
+        resources = [aws_iam_role.presign_role.arn]
+    }
+}
+
+resource "aws_iam_role_policy" "lambda_exec_assume_presign_role" {
+    name   = "lambda_exec_assume_presign_role"
+    role   = aws_iam_role.lambda_exec.id
+    policy = data.aws_iam_policy_document.assume_presign_role.json
+}
