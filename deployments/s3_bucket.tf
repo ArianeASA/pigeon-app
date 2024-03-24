@@ -9,6 +9,12 @@ resource "aws_s3_bucket_ownership_controls" "lambda_bucket_controls" {
     }
 }
 
+resource "aws_s3_object" "lambda_objetc_filter" {
+    bucket = aws_s3_bucket.pigeon_bucket.id
+    key    = "test/"
+    acl   = "private"
+}
+
 resource "aws_s3_bucket_acl" "lambda_bucket_acl" {
     depends_on = [aws_s3_bucket_ownership_controls.lambda_bucket_controls]
 
