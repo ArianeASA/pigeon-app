@@ -14,7 +14,7 @@ data "archive_file" "lambda_zip" {
 resource "aws_s3_object" "lambda_main" {
   bucket = var.bucket_main_id
 
-  key    = "/pigeon/${formatdate("YYYYMMDD", timestamp())}/hash${formatdate("hhmmss", timestamp())}-bootstrap.zip"
+  key    = "pigeon/${formatdate("YYYYMMDD", timestamp())}/hash${formatdate("hhmmss", timestamp())}-bootstrap.zip"
   source = local.output_path_zip
   acl   = "private"
   etag = data.archive_file.lambda_zip.output_base64sha256
