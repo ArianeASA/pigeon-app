@@ -46,8 +46,16 @@ resource "aws_s3_bucket_acl" "lambda_bucket_acl" {
     bucket = aws_s3_bucket.pigeon_bucket.id
     acl    = "private"
 }
+
+resource "null_resource" "wait_for_lambda_trigger" {
+    depends_on   = [aws_lambda_permission.allow_bucket]
+    provisioner "local-exec" {
+        command = "sleep 3m"
+    }
+}
 resource "aws_s3_bucket_notification" "bucket_notification" {
     bucket = aws_s3_bucket.pigeon_bucket.id
+    depends_on   = [null_resource.wait_for_lambda_trigger]
 
     lambda_function {
         lambda_function_arn = aws_lambda_function.pigeon_lambda.arn
