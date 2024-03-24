@@ -128,8 +128,12 @@ resource "aws_s3_bucket_lifecycle_configuration" "pigeon_bucket_lifecycle" {
             days = 1
         }
 
+        filter {
+            prefix = "relatorios/"
+        }
         noncurrent_version_expiration {
-            days = 1
+            noncurrent_days = 1
+
         }
     }
 }
