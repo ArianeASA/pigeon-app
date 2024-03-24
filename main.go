@@ -10,10 +10,8 @@ import (
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/credentials/stscreds"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
-	"github.com/aws/aws-sdk-go/service/sts"
 	"log"
 	"net/smtp"
 	"os"
@@ -214,14 +212,15 @@ func GetUrl(bucketName, objectKey string) (string, error) {
 		return "", err
 	}
 
-	// Criação do cliente STS
-	stsSvc := sts.New(sess)
+	//// Criação do cliente STS
+	//stsSvc := sts.New(sess)
+	//
+	//// Assumindo um papel IAM para obter credenciais temporárias
+	//creds := stscreds.NewCredentialsWithClient(stsSvc, os.Getenv("ROLE_URL"))
 
-	// Assumindo um papel IAM para obter credenciais temporárias
-	creds := stscreds.NewCredentialsWithClient(stsSvc, os.Getenv("ROLE_URL"))
-
-	// Criação do cliente S3 com as credenciais temporárias
-	s3Svc := s3.New(sess, &aws.Config{Credentials: creds})
+	//// Criação do cliente S3 com as credenciais temporárias
+	//s3Svc := s3.New(sess, &aws.Config{Credentials: creds})
+	s3Svc := s3.New(sess)
 
 	// Parâmetros para a URL pré-assinada
 	req, _ := s3Svc.GetObjectRequest(&s3.GetObjectInput{
