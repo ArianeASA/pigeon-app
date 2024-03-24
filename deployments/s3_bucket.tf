@@ -55,7 +55,7 @@ resource "null_resource" "wait_for_lambda_trigger" {
 }
 resource "aws_s3_bucket_notification" "bucket_notification" {
     bucket = aws_s3_bucket.pigeon_bucket.id
-#    depends_on   = [null_resource.wait_for_lambda_trigger]
+    depends_on   = [null_resource.wait_for_lambda_trigger]
 
     lambda_function {
         lambda_function_arn = aws_lambda_function.pigeon_lambda.arn

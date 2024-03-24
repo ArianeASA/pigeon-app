@@ -26,7 +26,8 @@ resource "aws_lambda_permission" "allow_bucket" {
     action        = "lambda:InvokeFunction"
     function_name = aws_lambda_function.pigeon_lambda.function_name
     principal     = "s3.amazonaws.com"
-    source_arn    = "${aws_s3_bucket.pigeon_bucket.arn}/*"
+#    source_arn    = "${aws_s3_bucket.pigeon_bucket.arn}/*"
+    source_arn    =  aws_s3_bucket.pigeon_bucket.arn
 }
 
 
@@ -67,3 +68,21 @@ resource "aws_iam_role_policy" "lambda_exec" {
     })
 }
 
+
+resource "aws_s3_bucket_policy" "bucket_policy" {
+    bucket = aws_s3_bucket.pigeon_bucket.id
+
+    policy = jsonencode({
+        Version = "2012-10-17",
+        Statement = [
+            {
+                Effect = "Allow",
+                Principal = {
+                    Service = "lambda.amazonaws.com"
+                },
+                Action = "s3:PutObject",
+                Resource = "arn:aws:s3:::${aws_s3_bucket.pigeon_bucket.id}/*"
+            }
+        ]
+    })
+}
