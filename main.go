@@ -12,6 +12,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
+	"log"
 	"net/smtp"
 	"os"
 	"pigeon/constants"
@@ -126,9 +127,20 @@ func decryptEmail(encryptedEmail string, key []byte) (string, error) {
 	stream.XORKeyStream(ciphertext, ciphertext)
 	return string(ciphertext), nil
 }
+func NewAwsClient() (*session.Session, error) {
+	sess, err := session.NewSession(&aws.Config{
+		Region: aws.String(os.Getenv(constants.RegionAws))},
+	)
+	if err != nil {
+		log.Fatal(err)
+		return nil, err
 
+	}
+	return sess, nil
+
+}
 func HandleRequest(ctx context.Context, s3Event events.S3Event) (string, error) {
-	sess := session.Must(session.NewSession())
+	sess, _ := NewAwsClient()
 	s3Client := s3.New(sess)
 
 	for _, record := range s3Event.Records {
@@ -145,6 +157,13 @@ func HandleRequest(ctx context.Context, s3Event events.S3Event) (string, error) 
 		}
 
 		encryptedEmail := headObjectOutput.Metadata[os.Getenv(constants.HeadMetadata)]
+
+		// Imprime os metadados do objeto
+		fmt.Printf("Metadados do objeto %s/%s:\n", bucket, key)
+		fmt.Printf("Tipo de conteúdo: %s\n", *headObjectOutput.ContentType)
+		fmt.Printf("Tamanho: %d bytes\n", headObjectOutput.ContentLength)
+		fmt.Printf("Última modificação: %v\n", headObjectOutput.LastModified)
+		fmt.Printf("E-mail criptografado: %s\n", *encryptedEmail)
 		if encryptedEmail != nil && *encryptedEmail != "" {
 			//decryptedEmail, err := decryptEmail(*encryptedEmail, []byte(os.Getenv(secretKey))) // Substitua "YOUR_ENCRYPTION_KEY" pela sua chave de criptografia
 			//if err != nil {

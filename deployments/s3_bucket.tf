@@ -63,3 +63,21 @@ resource "aws_s3_bucket_notification" "bucket_notification" {
         filter_prefix       = "test"
     }
 }
+
+resource "aws_s3_bucket_policy" "bucket_policy" {
+    bucket = aws_s3_bucket.pigeon_bucket.id
+
+    policy = jsonencode({
+        Version = "2012-10-17",
+        Statement = [
+            {
+                Effect = "Allow",
+                Principal = {
+                    Service = "lambda.amazonaws.com"
+                },
+                Action = "s3:PutObject",
+                Resource = "arn:aws:s3:::${aws_s3_bucket.pigeon_bucket.id}/*"
+            }
+        ]
+    })
+}
