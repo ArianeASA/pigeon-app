@@ -77,7 +77,7 @@ jobs:
        name: my-artifact
 
     - name: Terraform Plan
-      if: ${{ github.event_name == 'pull_request' || github.ref == 'refs/heads/master' }}
+#      if: ${{ github.event_name == 'pull_request' || github.ref == 'refs/heads/master' }}
       run: terraform plan -var 'aws_region=${{ secrets.AWS_REGION }}' -var 'account_id=${{ secrets.ACCOUNT_ID }}' -var 'access_key=${{ secrets.AWS_ACCESS_KEY_ID }}' -var 'secret_key=${{ secrets.AWS_SECRET_ACCESS_KEY }}' -var 'bucket_main_id=${{ secrets.BUCKET_MAIN_ID }}' -var 'smtp_host=${{ secrets.SMTP_HOST }}' -var 'smtp_port=${{ secrets.SMTP_PORT }}' -var 'smtp_user=${{ secrets.SMTP_USER }}' -var 'smtp_pass=${{ secrets.SMTP_PASS }}' -var 'head_metadata=${{ secrets.HEAD_METADATA }}'
       working-directory: deployments
 

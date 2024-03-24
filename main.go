@@ -141,7 +141,7 @@ func HandleRequest(ctx context.Context, s3Event events.S3Event) (string, error) 
 	fmt.Printf("Evento recebido: %v\n", s3Event)
 	for _, record := range s3Event.Records {
 		bucket := record.S3.Bucket.Name
-		key := record.S3.Object.Key
+		key := record.S3.Object.URLDecodedKey
 
 		headObjectInput := &s3.HeadObjectInput{
 			Bucket: aws.String(bucket),
