@@ -138,6 +138,7 @@ func HandleRequest(ctx context.Context, s3Event events.S3Event) (string, error) 
 	sess, _ := NewAwsClient()
 	s3Client := s3.New(sess)
 
+	fmt.Printf("Evento recebido: %v\n", s3Event)
 	for _, record := range s3Event.Records {
 		bucket := record.S3.Bucket.Name
 		key := record.S3.Object.Key
