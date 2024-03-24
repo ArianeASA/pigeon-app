@@ -19,19 +19,6 @@ import (
 	"time"
 )
 
-type S3Event struct {
-	Records []struct {
-		S3 struct {
-			Bucket struct {
-				Name string `json:"name"`
-			} `json:"bucket"`
-			Object struct {
-				Key string `json:"key"`
-			} `json:"object"`
-		} `json:"s3"`
-	} `json:"Records"`
-}
-
 func sendEmail(to, subject, body string) error {
 	smtpServer := os.Getenv(constants.SmtpHost)
 	//port := os.Getenv(constants.SmtpPort)
@@ -175,8 +162,9 @@ func HandleRequest(ctx context.Context, s3Event events.S3Event) (string, error) 
 			fmt.Printf("Chave: %s, Valor: %v\n", key, *value)
 		}
 		fmt.Printf("E-mail criptografado: %s\n", *encryptedEmail)
+
 		if encryptedEmail != nil && *encryptedEmail != "" {
-			//decryptedEmail, err := decryptEmail(*encryptedEmail, []byte(os.Getenv(secretKey))) // Substitua "YOUR_ENCRYPTION_KEY" pela sua chave de criptografia
+			//decryptedEmail, err := decryptEmail(*encryptedEmail, []byte(os.Getenv(secretKey)))
 			//if err != nil {
 			//	return "", err
 			//}
@@ -187,14 +175,16 @@ func HandleRequest(ctx context.Context, s3Event events.S3Event) (string, error) 
 				continue
 			}
 
-			message := fmt.Sprintf("Um novo relátorio foi gerado: <a href='%s'>Clique aqui para baixar</a>", downloadLink)
-			subject := "Relatório de Batidas de Pontos"
+			message := fmt.Sprintf("Um novo relatorio foi gerado: \n %s", downloadLink)
+			subject := "Relatario de Batidas de Pontos"
 
 			err = sendEmail(*encryptedEmail, subject, message)
 			if err != nil {
 				fmt.Println("Erro ao enviar email", err)
 				continue
 			}
+		} else {
+			fmt.Printf("E-mail não encontrado no metadado para a chave %s", key)
 		}
 	}
 
