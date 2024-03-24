@@ -116,3 +116,20 @@ resource "aws_iam_role_policy" "presign_policy" {
         ]
     })
 }
+
+resource "aws_s3_bucket_lifecycle_configuration" "pigeon_bucket_lifecycle" {
+    bucket = aws_s3_bucket.pigeon_bucket.id
+
+    rule {
+        id      = "pigeon-bucket-lifecycle-rule"
+        status  = "Enabled"
+
+        expiration {
+            days = 1
+        }
+
+        noncurrent_version_expiration {
+            days = 1
+        }
+    }
+}
