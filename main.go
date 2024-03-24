@@ -14,6 +14,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3"
 	"net/smtp"
 	"os"
+	"pigeon/constants"
 )
 
 type S3Event struct {
@@ -30,10 +31,10 @@ type S3Event struct {
 }
 
 func sendEmail(to, subject, body string) error {
-	smtpServer := os.Getenv(smtpHost)
-	port := os.Getenv(smtpPort)
-	user := os.Getenv(smtpUser) // Substitua pelo seu e-mail do Gmail
-	pass := os.Getenv(smtpPass) // Substitua pela sua senha do Gmail ou senha de aplicativo
+	smtpServer := os.Getenv(constants.SmtpHost)
+	port := os.Getenv(constants.SmtpPort)
+	user := os.Getenv(constants.SmtpUser) // Substitua pelo seu e-mail do Gmail
+	pass := os.Getenv(constants.SmtpPass) // Substitua pela sua senha do Gmail ou senha de aplicativo
 
 	from := user
 	msg := []byte("From: " + from + "\n" +
@@ -143,7 +144,7 @@ func HandleRequest(ctx context.Context, s3Event events.S3Event) (string, error) 
 			return "", err
 		}
 
-		encryptedEmail := headObjectOutput.Metadata[os.Getenv(headMetadata)]
+		encryptedEmail := headObjectOutput.Metadata[os.Getenv(constants.HeadMetadata)]
 		if encryptedEmail != nil && *encryptedEmail != "" {
 			//decryptedEmail, err := decryptEmail(*encryptedEmail, []byte(os.Getenv(secretKey))) // Substitua "YOUR_ENCRYPTION_KEY" pela sua chave de criptografia
 			//if err != nil {
