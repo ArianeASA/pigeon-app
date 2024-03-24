@@ -81,23 +81,23 @@ jobs:
       run: terraform plan -var 'aws_region=${{ secrets.AWS_REGION }}' -var 'account_id=${{ secrets.ACCOUNT_ID }}' -var 'access_key=${{ secrets.AWS_ACCESS_KEY_ID }}' -var 'secret_key=${{ secrets.AWS_SECRET_ACCESS_KEY }}' -var 'bucket_main_id=${{ secrets.BUCKET_MAIN_ID }}' -var 'smtp_host=${{ secrets.SMTP_HOST }}' -var 'smtp_port=${{ secrets.SMTP_PORT }}' -var 'smtp_user=${{ secrets.SMTP_USER }}' -var 'smtp_pass=${{ secrets.SMTP_PASS }}' -var 'head_metadata=${{ secrets.HEAD_METADATA }}'
       working-directory: deployments
 
-    - uses: trstringer/manual-approval@v1
-      id: approval
-      with:
-        secret: ${{ github.TOKEN }}
-        approvers: ArianeASA
-        minimum-approvals: 1
-        issue-title: "Deploying v1.0.0 to prod"
-        issue-body: "Review the terraform plan, then approve or deny the deployment of v1.0.0 to prod."
-        exclude-workflow-initiator-as-approver: false
-#      continue-on-error: true
+#    - uses: trstringer/manual-approval@v1
+#      id: approval
+#      with:
+#        secret: ${{ github.TOKEN }}
+#        approvers: ArianeASA
+#        minimum-approvals: 1
+#        issue-title: "Deploying v1.0.0 to prod"
+#        issue-body: "Review the terraform plan, then approve or deny the deployment of v1.0.0 to prod."
+#        exclude-workflow-initiator-as-approver: false
+##      continue-on-error: true
 
-    - name: Terraform Apply
-#      if: github.ref == 'refs/heads/master'
-      if: ${{ steps.approval.conclusion == 'success' }}
-      id: apply
-      run: terraform apply -auto-approve -var 'aws_region=${{ secrets.AWS_REGION }}' -var 'access_key=${{ secrets.AWS_ACCESS_KEY_ID }}' -var 'secret_key=${{ secrets.AWS_SECRET_ACCESS_KEY }}' -var 'account_id=${{ secrets.ACCOUNT_ID }}' -var 'bucket_main_id=${{ secrets.BUCKET_MAIN_ID }}' -var 'smtp_host=${{ secrets.SMTP_HOST }}' -var 'smtp_port=${{ secrets.SMTP_PORT }}' -var 'smtp_user=${{ secrets.SMTP_USER }}' -var 'smtp_pass=${{ secrets.SMTP_PASS }}' -var 'head_metadata=${{ secrets.HEAD_METADATA }}'
-      working-directory: deployments
+#    - name: Terraform Apply
+##      if: github.ref == 'refs/heads/master'
+#      if: ${{ steps.approval.conclusion == 'success' }}
+#      id: apply
+#      run: terraform apply -auto-approve -var 'aws_region=${{ secrets.AWS_REGION }}' -var 'access_key=${{ secrets.AWS_ACCESS_KEY_ID }}' -var 'secret_key=${{ secrets.AWS_SECRET_ACCESS_KEY }}' -var 'account_id=${{ secrets.ACCOUNT_ID }}' -var 'bucket_main_id=${{ secrets.BUCKET_MAIN_ID }}' -var 'smtp_host=${{ secrets.SMTP_HOST }}' -var 'smtp_port=${{ secrets.SMTP_PORT }}' -var 'smtp_user=${{ secrets.SMTP_USER }}' -var 'smtp_pass=${{ secrets.SMTP_PASS }}' -var 'head_metadata=${{ secrets.HEAD_METADATA }}'
+#      working-directory: deployments
 
     - name: Cleanup if apply fails
       if: ${{ steps.apply.conclusion != 'success' }}
