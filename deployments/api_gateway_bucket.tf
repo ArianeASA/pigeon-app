@@ -59,7 +59,7 @@ resource "aws_api_gateway_integration" "integration" {
     http_method = aws_api_gateway_method.method.http_method
 
     integration_http_method = "GET"
-    type                    = "AWS_PROXY"
+    type                    = "AWS"
     uri                     = "arn:aws:apigateway:${var.aws_region}:s3:path/${aws_s3_bucket.pigeon_bucket.id}/{proxy+}"
     credentials             = aws_iam_role.apigateway_role.arn
 }
