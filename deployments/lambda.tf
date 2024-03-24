@@ -69,3 +69,29 @@ resource "aws_iam_role_policy" "lambda_exec" {
 }
 
 
+resource "aws_iam_policy" "s3_access" {
+    name        = "s3_access"
+    description = "Allows access to the S3 bucket"
+
+    policy = jsonencode({
+        Version = "2012-10-17",
+        Statement = [
+            {
+                Effect = "Allow",
+                Action = [
+                    "s3:GetObject",
+                    "s3:ListBucket"
+                ],
+                Resource = [
+                    "arn:aws:s3:::${aws_s3_bucket.pigeon_bucket.id}",
+                    "arn:aws:s3:::${aws_s3_bucket.pigeon_bucket.id}/*"
+                ]
+            }
+        ]
+    })
+}
+
+resource "aws_iam_role_policy_attachment" "lambda_exec_s3_access" {
+    role       = aws_iam_role.lambda_exec.name
+    policy_arn = aws_iam_policy.s3_access.arn
+}
