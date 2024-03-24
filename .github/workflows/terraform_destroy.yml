@@ -1,0 +1,57 @@
+name: Terraform Destroy
+on:
+  workflow_dispatch:
+
+jobs:
+
+  go-build:
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.22'
+
+    - name: Test
+      run: go test -v ./...
+
+    - name: Build
+      run: GOARCH=amd64 CGO_ENABLED=0 GOOS=linux go build -tags lambda.norpc -o bootstrap main.go
+
+    - name: Archive production artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: my-artifact
+        path: ./bootstrap
+
+  terraform_destroy:
+    needs: go-build
+    runs-on: ubuntu-latest
+    steps:
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ secrets.AWS_REGION }}
+
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v1
+
+    - name: Terraform Init
+      run: terraform init
+      working-directory: deployments
+
+    - name: Download artifact
+      uses: actions/download-artifact@v2
+      with:
+        name: my-artifact
+
+    - name: Terraform Destroy
+      run: terraform destroy -auto-approve -var 'aws_region=${{ secrets.AWS_REGION }}' -var 'access_key=${{ secrets.AWS_ACCESS_KEY_ID }}' -var 'secret_key=${{ secrets.AWS_SECRET_ACCESS_KEY }}' -var 'account_id=${{ secrets.ACCOUNT_ID }}'
+      working-directory: deployments
