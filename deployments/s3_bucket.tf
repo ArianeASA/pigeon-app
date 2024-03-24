@@ -1,5 +1,5 @@
 resource "aws_s3_bucket" "pigeon_bucket" {
-    bucket = "pigeon-bucket"
+    bucket = "pigeon-bucket-hacka-app"
 }
 
 resource "aws_s3_bucket_ownership_controls" "lambda_bucket_controls" {
