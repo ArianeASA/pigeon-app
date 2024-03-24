@@ -218,7 +218,7 @@ func GetUrl(bucketName, objectKey string) (string, error) {
 	stsSvc := sts.New(sess)
 
 	// Assumindo um papel IAM para obter credenciais temporárias
-	creds := stscreds.NewCredentialsWithClient(stsSvc, os.Getenv("ROLE_ARN"))
+	creds := stscreds.NewCredentialsWithClient(stsSvc, os.Getenv("ROLE_URL"))
 
 	// Criação do cliente S3 com as credenciais temporárias
 	s3Svc := s3.New(sess, &aws.Config{Credentials: creds})
