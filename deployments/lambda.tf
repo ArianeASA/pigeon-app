@@ -11,12 +11,11 @@ resource "aws_lambda_function" "pigeon_lambda" {
 
     environment {
         variables = {
-            EXAMPLE_VARIABLE = "example_value"
             SMTP_HOST = var.smtp_host
             SMTP_PORT = var.smtp_port
             SMTP_USER = var.smtp_user
             SMTP_PASS = var.smtp_pass
-            HeadMetadata = var.head_metadata
+            HEAD_METADATA = var.head_metadata
         }
     }
     role = aws_iam_role.lambda_exec.arn

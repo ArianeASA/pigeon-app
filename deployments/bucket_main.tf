@@ -1,6 +1,6 @@
 locals {
   source_file = "../${path.module}/bootstrap"
-  output_path_zip = "../pigeon/${path.module}/bootstrap.zip"
+  output_path_zip = "../${path.module}/bootstrap.zip"
 
 }
 
