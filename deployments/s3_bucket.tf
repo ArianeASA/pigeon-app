@@ -16,7 +16,7 @@ resource "aws_s3_object" "lambda_object_filter" {
 }
 
 resource "aws_iam_policy" "s3_get_object_pigeon" {
-    name        = "s3_get_object"
+    name        = "s3_get_object_pigeon"
     description = "Allows access to the S3 object"
 
     policy = jsonencode({
@@ -50,16 +50,16 @@ resource "aws_s3_bucket_acl" "lambda_bucket_acl" {
 resource "null_resource" "wait_for_lambda_trigger" {
     depends_on   = [aws_lambda_permission.allow_bucket]
     provisioner "local-exec" {
-        command = "sleep 3m"
+        command = "sleep 1m"
     }
 }
 resource "aws_s3_bucket_notification" "bucket_notification" {
     bucket = aws_s3_bucket.pigeon_bucket.id
-    depends_on   = [null_resource.wait_for_lambda_trigger]
+#    depends_on   = [null_resource.wait_for_lambda_trigger]
 
     lambda_function {
         lambda_function_arn = aws_lambda_function.pigeon_lambda.arn
         events              = ["s3:ObjectCreated:*"]
-        filter_prefix       = "test/"
+        filter_prefix       = "test"
     }
 }
