@@ -164,7 +164,9 @@ func HandleRequest(ctx context.Context, s3Event events.S3Event) (string, error) 
 		fmt.Printf("Tamanho: %d bytes\n", headObjectOutput.ContentLength)
 		fmt.Printf("Última modificação: %v\n", headObjectOutput.LastModified)
 		//fmt.Printf("E-mail criptografado: %s\n", *encryptedEmail)
-		fmt.Printf("Metadados : %+v\n", headObjectOutput.Metadata)
+		for key, value := range headObjectOutput.Metadata {
+			fmt.Printf("Chave: %s, Valor: %v\n", key, *value)
+		}
 		if encryptedEmail != nil && *encryptedEmail != "" {
 			//decryptedEmail, err := decryptEmail(*encryptedEmail, []byte(os.Getenv(secretKey))) // Substitua "YOUR_ENCRYPTION_KEY" pela sua chave de criptografia
 			//if err != nil {
