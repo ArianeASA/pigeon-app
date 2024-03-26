@@ -82,7 +82,7 @@ jobs:
       working-directory: deployments
 
     - uses: trstringer/manual-approval@v1
-      if: ${{ github.event_name == 'pull_request' || github.ref == 'refs/heads/master' }}
+      if: ${{ github.ref == 'refs/heads/master' &&  github.ref == 'refs/heads/master' }}
       id: approval
       with:
         secret: ${{ github.TOKEN }}
