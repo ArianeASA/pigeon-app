@@ -5,8 +5,8 @@ name: Deploy
 
 on:
   workflow_dispatch:
-  push:
-    branches: [ "develop" ]
+#  push:
+#    branches: [ "develop" ]
   pull_request:
     branches: [ "develop", "master" ]
   release:
@@ -77,11 +77,12 @@ jobs:
        name: my-artifact
 
     - name: Terraform Plan
-#      if: ${{ github.event_name == 'pull_request' || github.ref == 'refs/heads/master' }}
+      if: ${{ github.event_name == 'pull_request' || github.ref == 'refs/heads/master' }}
       run: terraform plan -var 'aws_region=${{ secrets.AWS_REGION }}' -var 'account_id=${{ secrets.ACCOUNT_ID }}' -var 'access_key=${{ secrets.AWS_ACCESS_KEY_ID }}' -var 'secret_key=${{ secrets.AWS_SECRET_ACCESS_KEY }}' -var 'bucket_main_id=${{ secrets.BUCKET_MAIN_ID }}' -var 'smtp_host=${{ secrets.SMTP_HOST }}' -var 'smtp_port=${{ secrets.SMTP_PORT }}' -var 'smtp_user=${{ secrets.SMTP_USER }}' -var 'smtp_pass=${{ secrets.SMTP_PASS }}' -var 'head_metadata=${{ secrets.HEAD_METADATA }}'
       working-directory: deployments
 
     - uses: trstringer/manual-approval@v1
+      if: ${{ github.event_name == 'pull_request' || github.ref == 'refs/heads/master' }}
       id: approval
       with:
         secret: ${{ github.TOKEN }}
@@ -93,14 +94,13 @@ jobs:
 #      continue-on-error: true
 
     - name: Terraform Apply
-#      if: github.ref == 'refs/heads/master'
-      if: ${{ steps.approval.conclusion == 'success' }}
+      if: ${{ github.ref == 'refs/heads/master' && steps.approval.conclusion == 'success' }}
       id: apply
       run: terraform apply -auto-approve -var 'aws_region=${{ secrets.AWS_REGION }}' -var 'access_key=${{ secrets.AWS_ACCESS_KEY_ID }}' -var 'secret_key=${{ secrets.AWS_SECRET_ACCESS_KEY }}' -var 'account_id=${{ secrets.ACCOUNT_ID }}' -var 'bucket_main_id=${{ secrets.BUCKET_MAIN_ID }}' -var 'smtp_host=${{ secrets.SMTP_HOST }}' -var 'smtp_port=${{ secrets.SMTP_PORT }}' -var 'smtp_user=${{ secrets.SMTP_USER }}' -var 'smtp_pass=${{ secrets.SMTP_PASS }}' -var 'head_metadata=${{ secrets.HEAD_METADATA }}'
       working-directory: deployments
 
     - name: Cleanup if apply fails
-      if: ${{ steps.apply.conclusion != 'success' }}
+      if: ${{ github.ref == 'refs/heads/master' && steps.apply.conclusion != 'success' }}
       run: terraform destroy -auto-approve -var 'aws_region=${{ secrets.AWS_REGION }}' -var 'access_key=${{ secrets.AWS_ACCESS_KEY_ID }}' -var 'secret_key=${{ secrets.AWS_SECRET_ACCESS_KEY }}' -var 'account_id=${{ secrets.ACCOUNT_ID }}' -var 'bucket_main_id=${{ secrets.BUCKET_MAIN_ID }}' -var 'smtp_host=${{ secrets.SMTP_HOST }}' -var 'smtp_port=${{ secrets.SMTP_PORT }}' -var 'smtp_user=${{ secrets.SMTP_USER }}' -var 'smtp_pass=${{ secrets.SMTP_PASS }}' -var 'head_metadata=${{ secrets.HEAD_METADATA }}'
       working-directory: deployments
 
