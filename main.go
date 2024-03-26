@@ -2,137 +2,128 @@ package main
 
 import (
 	"context"
-	"crypto/aes"
-	"crypto/cipher"
 	"crypto/tls"
-	"encoding/base64"
 	"fmt"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
+	"log"
 	"net/smtp"
 	"os"
+	"pigeon/constants"
+	"time"
 )
 
-type S3Event struct {
-	Records []struct {
-		S3 struct {
-			Bucket struct {
-				Name string `json:"name"`
-			} `json:"bucket"`
-			Object struct {
-				Key string `json:"key"`
-			} `json:"object"`
-		} `json:"s3"`
-	} `json:"Records"`
-}
-
 func sendEmail(to, subject, body string) error {
-	smtpServer := os.Getenv(smtpHost)
-	port := os.Getenv(smtpPort)
-	user := os.Getenv(smtpUser) // Substitua pelo seu e-mail do Gmail
-	pass := os.Getenv(smtpPass) // Substitua pela sua senha do Gmail ou senha de aplicativo
+	smtpServer := os.Getenv(constants.SmtpHost)
+	user := os.Getenv(constants.SmtpUser)
+	pass := os.Getenv(constants.SmtpPass)
+	smtpPort := "587" // Porta para conexão TLS
 
 	from := user
-	msg := []byte("From: " + from + "\n" +
+	password := pass
+
+	message := []byte("From: " + from + "\n" +
 		"To: " + to + "\n" +
 		"Subject: " + subject + "\n\n" +
 		body)
 
-	auth := smtp.PlainAuth("", user, pass, smtpServer)
+	auth := smtp.PlainAuth("", from, password, smtpServer)
 
-	tlsConfig := &tls.Config{
-		InsecureSkipVerify: false,
-		ServerName:         smtpServer,
-	}
-
-	conn, err := tls.Dial("tcp", smtpServer+":"+port, tlsConfig)
+	client, err := smtp.Dial(smtpServer + ":" + smtpPort)
 	if err != nil {
 		fmt.Println("Erro ao conectar ao servidor SMTP:", err)
 		return err
 	}
+	defer func(client *smtp.Client) {
+		err := client.Close()
+		if err != nil {
+			fmt.Println("Erro ao fechar conexão:", err)
+		}
+	}(client)
 
-	client, err := smtp.NewClient(conn, smtpServer)
-	if err != nil {
-		fmt.Println("Erro ao criar cliente SMTP:", err)
+	tlsConfig := &tls.Config{
+		InsecureSkipVerify: true,
+		ServerName:         smtpServer,
+	}
+	if err := client.StartTLS(tlsConfig); err != nil {
 		return err
-
 	}
 
 	if err := client.Auth(auth); err != nil {
-		fmt.Println("Erro na autenticação:", err)
 		return err
-
 	}
 
 	if err := client.Mail(from); err != nil {
-		fmt.Println("Erro ao definir remetente:", err)
 		return err
-
 	}
-
 	if err := client.Rcpt(to); err != nil {
-		fmt.Println("Erro ao definir destinatário:", err)
 		return err
-
 	}
 
-	wc, err := client.Data()
+	writer, err := client.Data()
 	if err != nil {
-		fmt.Println("Erro ao obter writer:", err)
 		return err
-
 	}
-
-	_, err = wc.Write(msg)
+	_, err = writer.Write(message)
 	if err != nil {
-		fmt.Println("Erro ao escrever corpo do e-mail:", err)
 		return err
 	}
-
-	err = wc.Close()
+	err = writer.Close()
 	if err != nil {
-		fmt.Println("Erro ao fechar writer:", err)
 		return err
-
 	}
-
-	if err := client.Quit(); err != nil {
-		fmt.Println("Erro ao encerrar conexão:", err)
-		return err
-
-	}
-
-	fmt.Println("E-mail enviado com sucesso!")
-	//err = smtp.SendMail(smtpServer+":"+port, auth, from, []string{to}, msg)
+	fmt.Println("Email enviado com sucesso!")
 	return nil
 }
 
-func decryptEmail(encryptedEmail string, key []byte) (string, error) {
-	ciphertext, _ := base64.StdEncoding.DecodeString(encryptedEmail)
-	block, err := aes.NewCipher(key)
+func NewAwsClient() (*session.Session, error) {
+	sess, err := session.NewSession(&aws.Config{
+		Region: aws.String(os.Getenv(constants.RegionAws))},
+	)
 	if err != nil {
+		log.Fatal(err)
+		return nil, err
+
+	}
+	return sess, nil
+
+}
+
+func GetUrl(bucketName, objectKey string) (string, error) {
+	sess, err := NewAwsClient()
+	if err != nil {
+		fmt.Println("Erro ao criar sessão AWS:", err)
 		return "", err
 	}
-	if len(ciphertext) < aes.BlockSize {
-		return "", fmt.Errorf("ciphertext too short")
+
+	s3Svc := s3.New(sess)
+
+	req, _ := s3Svc.GetObjectRequest(&s3.GetObjectInput{
+		Bucket: aws.String(bucketName),
+		Key:    aws.String(objectKey),
+	})
+
+	urlStr, err := req.Presign(30 * time.Minute)
+	if err != nil {
+		fmt.Println("Erro ao gerar URL pré-assinada:", err)
+		return "", err
 	}
-	iv := ciphertext[:aes.BlockSize]
-	ciphertext = ciphertext[aes.BlockSize:]
-	stream := cipher.NewCFBDecrypter(block, iv)
-	stream.XORKeyStream(ciphertext, ciphertext)
-	return string(ciphertext), nil
+
+	fmt.Println("URL Pré-assinada:", urlStr)
+	return urlStr, nil
 }
 
 func HandleRequest(ctx context.Context, s3Event events.S3Event) (string, error) {
-	sess := session.Must(session.NewSession())
+	sess, _ := NewAwsClient()
 	s3Client := s3.New(sess)
 
+	//fmt.Printf("Evento recebido: %v\n", s3Event)
 	for _, record := range s3Event.Records {
 		bucket := record.S3.Bucket.Name
-		key := record.S3.Object.Key
+		key := record.S3.Object.URLDecodedKey
 
 		headObjectInput := &s3.HeadObjectInput{
 			Bucket: aws.String(bucket),
@@ -140,25 +131,39 @@ func HandleRequest(ctx context.Context, s3Event events.S3Event) (string, error) 
 		}
 		headObjectOutput, err := s3Client.HeadObject(headObjectInput)
 		if err != nil {
+			fmt.Println("Erro ao obter metadados do objeto:", err)
 			return "", err
 		}
 
-		encryptedEmail := headObjectOutput.Metadata[os.Getenv(headMetadata)]
-		if encryptedEmail != nil && *encryptedEmail != "" {
-			//decryptedEmail, err := decryptEmail(*encryptedEmail, []byte(os.Getenv(secretKey))) // Substitua "YOUR_ENCRYPTION_KEY" pela sua chave de criptografia
-			//if err != nil {
-			//	return "", err
-			//}
+		emailAddress := headObjectOutput.Metadata[os.Getenv(constants.HeadMetadata)]
 
-			downloadLink := fmt.Sprintf("https://%s.s3.amazonaws.com/%s", bucket, key)
+		//fmt.Printf("Metadados do objeto %s/%s:\n", bucket, key)
+		//fmt.Printf("Tipo de conteúdo: %s\n", *headObjectOutput.ContentType)
+		//fmt.Printf("Tamanho: %d bytes\n", headObjectOutput.ContentLength)
+		//fmt.Printf("Última modificação: %v\n", headObjectOutput.LastModified)
+		for key, value := range headObjectOutput.Metadata {
+			fmt.Printf("Chave: %s, Valor: %v\n", key, *value)
+		}
 
-			message := fmt.Sprintf("Um novo arquivo foi carregado: %s", downloadLink)
-			subject := "Novo arquivo carregado"
+		if emailAddress != nil && *emailAddress != "" {
 
-			err = sendEmail(*encryptedEmail, subject, message)
+			downloadLink, err := GetUrl(bucket, key)
 			if err != nil {
-				return "", err
+				fmt.Println("Erro ao obter URL pré-assinada:", err)
+				continue
 			}
+
+			message := fmt.Sprintf("Um novo relatorio foi gerado: \n %s \n"+
+				"Estes link expirará em 30 minutos.", downloadLink)
+			subject := "Relatario de Batidas de Pontos"
+
+			err = sendEmail(*emailAddress, subject, message)
+			if err != nil {
+				fmt.Println("Erro ao enviar email", err)
+				continue
+			}
+		} else {
+			fmt.Printf("E-mail não encontrado no metadado para a chave %s", key)
 		}
 	}
 
